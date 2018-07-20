@@ -50,7 +50,7 @@ class Voucher(models.Model):
         default=DiscountValueType.FIXED)
     discount_value = models.DecimalField(
         max_digits=12, decimal_places=settings.DEFAULT_DECIMAL_PLACES)
-
+    apply_once_per_customer = models.BooleanField(default=False)
     # not mandatory fields, usage depends on type
     countries = CountryField(multiple=True, blank=True)
     min_amount_spent = MoneyField(
@@ -122,6 +122,12 @@ class Voucher(models.Model):
                 min_amount_spent=min_amount_spent)
 
 
+class SaleQueryset(models.QuerySet):
+    def active(self, date):
+        return self.filter(
+            end_date__gte=date, start_date__lte=date)
+
+
 class Sale(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(
@@ -135,6 +141,8 @@ class Sale(models.Model):
     collections = models.ManyToManyField('product.Collection', blank=True)
     start_date = models.DateField(default=date.today)
     end_date = models.DateField(null=True, blank=True)
+
+    objects = SaleQueryset.as_manager()
 
     class Meta:
         app_label = 'discount'
